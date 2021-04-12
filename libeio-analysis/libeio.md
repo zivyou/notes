@@ -71,7 +71,7 @@ createOK--yes-->initWrk["init wrk; started++"]-->return
 
 ```mermaid
 graph TD
-sd
+etp_proc --锁住reqlock--> reqLock["mutex_lock(reqlock)"] --获取队头req--> reqShift["req=reqq_shifft()"] --> ... --> eio_execute
 
 ```
 
