@@ -21,6 +21,45 @@
 #### ev_loop的启动入口
 ev.c:  void ev_loop (EV_P_ int flags);
 
+调用路径:
+```mermaid
+graph TD
+ev_loop["ev_loop()"] --> call_pending["call_pending()"] --> ev_loop_verify["ev_loop_verify()"] --> postfork{postfork};
+postfork --yes--> queue_events["queue_events()"] --> call_pending["call_pending()"];
+
+ev_loop_verify --> preparecnt{preparecnt} --yes--> queue_events --> call_pending;
+
+postfork --no--> loop_fork["loop_fork()"];
+call_pending --> fd_reify["fd_reify()"]
+
+fd_reify --> backend_poll["backend_poll()"] --> timers_reify["timers_reify()"] --> idle_reify["idle_reify()"] --> call_pending
+```
+
+从上面看，call_pending()是一个核心的函数。
+下面看下call_pending()的逻辑
+
+```C
+void static inline
+call_pending (struct ev_loop *loop)
+{
+  int pri;
+  // 看起来是5个优先级队列
+  for (pri = 5; pri--; )
+    // 每个优先级队列遍历一遍
+    while (((loop)->pendingcnt) [pri])
+      {
+        // 从优先级队列中取出了一个loop实例。取的方法没看明白，和优先级队列的组织结构有关
+        ANPENDING *p = ((loop)->pendings) [pri] + --((loop)->pendingcnt) [pri];
+        if (__builtin_expect (((p->w) != 0),(1)))
+          {
+            p->w->pending = 0;
+            (p->w)->cb (loop, (p->w), (p->events));
+          }
+      }
+}
+
+```
+
 #### 主要数据结构
 
 ```mermaid
@@ -130,8 +169,9 @@ classDiagram
   ev_loop --* ev_check
   ev_loop --* ev_fork
 
-  ev_watcher<|-- ev_idle
-    ev_watcher<|-- ev_prepare
+  ev_watcher <--> ev_idle
+  ev_watcher <--> ev_prepare
+  ev_watcher <--> ev_fork
 
 ```
 
