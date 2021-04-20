@@ -1,3 +1,26 @@
+# node-0.0.1源码中的libev
+
+#### 目录结构
+.
+├── ev++.h                // libev simple C++ wrapper classes
+├── ev.c                  // libev event processing core, watcher management
+├── ev.h                  // libev native API header
+├── ev_epoll.c            // libev epoll fd activity backend
+├── ev_kqueue.c           // libev kqueue backend
+├── ev_poll.c             // libev poll fd activity backend
+├── ev_port.c             // libev solaris event port backend
+├── ev_select.c           // libev select fd activity backend
+├── ev_vars.h             // loop member variable declarations
+├── ev_win32.c            // libev win32 compatibility cruft (_not_ a backend)
+├── ev_wrap.h
+├── event.c               // libevent compatibility layer
+├── event.h               // libevent compatibility header, only core events supported
+└── event_compat.h
+
+
+#### ev_loop的启动入口
+ev.c:  void ev_loop (EV_P_ int flags);
+
 #### 主要数据结构
 
 ```mermaid
