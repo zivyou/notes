@@ -24,15 +24,15 @@ ev.c:  void ev_loop (EV_P_ int flags);
 调用路径:
 ```mermaid
 graph TD
-ev_loop["ev_loop()"] --> call_pending["call_pending()"] --> ev_loop_verify["ev_loop_verify()"] --> postfork{postfork};
-postfork --yes--> queue_events["queue_events()"] --> call_pending["call_pending()"];
+ev_loop["ev_loop()"] --> call_pending["call_pending()"] --"(1)"--> ev_loop_verify["ev_loop_verify()"] --"(1)"--> postfork{postfork};
+postfork --yes--> queue_events["queue_events()"] --"(1)"--> call_pending["call_pending()"];
 
-ev_loop_verify --> preparecnt{preparecnt} --yes--> queue_events --> call_pending;
+ev_loop_verify --"(1)"--> preparecnt{preparecnt} --yes--> queue_events --"(1)"--> call_pending;
 
 postfork --no--> loop_fork["loop_fork()"];
-call_pending --> fd_reify["fd_reify()"]
+call_pending --"(2)"--> fd_reify["fd_reify()"]
 
-fd_reify --> backend_poll["backend_poll()"] --> timers_reify["timers_reify()"] --> idle_reify["idle_reify()"] --> call_pending
+fd_reify --> backend_poll["backend_poll()"] --> timers_reify["timers_reify()"] --> idle_reify["idle_reify()"] --"(2)"--> call_pending
 ```
 
 从上面看，call_pending()是一个核心的函数。
@@ -59,6 +59,19 @@ call_pending (struct ev_loop *loop)
 }
 
 ```
+
+从上面看，ev_loop的每个tick会经历几个重要的流程/阶段:
+- 调用queue_events()检查loop->pending队列
+- 调用backend_poll()检查epoll各个fd的结果
+- 调用timers_reify()检查各个timer
+- 调用idle_reify()执行同步代码
+
+
+接下来先看下queue_events(),了解下loop->pending队列的管理:
+1. queue_events()往loop->pending添加event: 调用ev_feed_event(struct ev_loop*, void* w, int revents)
+添加的是void* w, 一个ev_watcher* 类型
+2. 
+
 
 #### 主要数据结构
 
